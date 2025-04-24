@@ -16,20 +16,6 @@ public final class Tetris extends JavaPlugin {
     public boolean isGameRunning = false;
     private TetrisGameManager gameManager;
 
-    /*
-    * java.lang.IllegalArgumentException:
-    * The embedded resource 'config.yml' cannot be found in
-    * plugins/minecraft-tetris.jarnable-sound: true
-    enable-particles: true
-
-# 점수 설정
-scoring:
-  single-line: 100
-  double-line: 300
-  triple-line: 500
-  tetris: 800
-    * */
-
     @Override
     public void onEnable() {
         // 플러그인 시작 로직
@@ -113,48 +99,7 @@ scoring:
                 player.sendMessage("\nplease insert correct players.");
                 return false;
             }
-
-//            player.sendMessage("\nonline players" + onlinePlayerList);
-//            player.sendMessage("active players" + activePlayerList);
-//            player.sendMessage("registered players" + registeredPlayers);
-
             gameManager.startGame(onlinePlayerList, registeredPlayers);
-
-//            if (Objects.equals(args[1], "quit")) {
-//                for (Player p : activePlayerList) {
-//                    gameManager.endGame(p);
-//                }
-//            }
-
-//            if (args.length == 0) {
-                // 기본 명령어 - 게임 시작
-//                gameManager.startGame(player);
-//                return true;
-//            }
-//            else if (args.length == 1) {
-//                if (args[0].equalsIgnoreCase("quit")) {
-//                    // 게임 종료
-//                    gameManager.endGame(player);
-//                    return true;
-//                }
-//                else if (args[0].equalsIgnoreCase("help")) {
-//                    // 도움말 표시
-//                    showHelp(player);
-//                    return true;
-//                }
-//                } else if (args[0].equals("NULL")) {
-//                    player.sendMessage("player 1 is null");
-//                }
-//                Player p1 =  new Player(); // args[0].getUniqueId();
-//                CommandSender sender1 = (CommandSender) player;
-//                player.sendMessage("sender1: " + sender1);
-//                Player p1 = (Player) args[0];
-//            }
-
-
-//             잘못된 명령어
-//            showHelp(player);
-//            return true;
         }
         return false;
     }
