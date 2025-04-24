@@ -1039,7 +1039,7 @@ public class TetrisPiece {
             generateCoordinationPoints();
         }
         drawPiece();
-//        drawGhostPiece();
+        drawGhostPiece();
     }
 
     public void addCoord(int row, int column) { //, int x, int y, int z) {
@@ -1218,12 +1218,16 @@ public class TetrisPiece {
     }
 
     public void drawUpcomingBlocks(int playerNumber, int[] upcomingPieces) {
-//        player.sendMessage("\nnumber: " + playerNumber + "\nnext piece: " + Arrays.toString(upcomingPieces));
-        player.sendMessage("drawUpcomingBlocks()\n");
+        System.out.println("[TetrisPiece] Drawing upcoming blocks for player " + playerNumber + ". Pieces: " + Arrays.toString(upcomingPieces)); // 디버깅 로그 추가
         int newOffsetY = 0;
 
         for (int i = 0; i < upcomingPieces.length; i++) {
             int blockNumber = upcomingPieces[i];
+            if (blockNumber < 0 || blockNumber >= PIECE_NAMES.length) { // 유효하지 않은 블록 번호 체크
+                System.out.println("[TetrisPiece] Invalid block number " + blockNumber + " at index " + i + " for player " + playerNumber);
+                continue; // 다음 블록으로 건너<0xEB><0x9A><0x8D>기
+            }
+
             int[][] c = switch (playerNumber) {
                 case 0 -> UPCOMING_BLOCKS_1[blockNumber];
                 case 1 -> UPCOMING_BLOCKS_2[blockNumber];
@@ -1233,14 +1237,30 @@ public class TetrisPiece {
                 default -> null;
             };
 
-            player.sendMessage("\nblockNumber: " + blockNumber);
+            if (c == null) {
+                System.out.println("[TetrisPiece] Could not find coordinates for player " + playerNumber);
+                continue; // 다음 블록으로 건너<0xEB><0x9A><0x8D>기
+            }
+
 
             Material blockType = PIECE_MATERIALS[blockNumber];
-            for (int[] coord : Objects.requireNonNull(c)) {
-                int x = coord[0];
-                int y = coord[1] + newOffsetY;
-                int z = coord[2];
-                Block block = world.getBlockAt(x, y, z);
+            System.out.println("[TetrisPiece] Player " + playerNumber + ", Slot " + i + " (Piece " + PIECE_NAMES[blockNumber] + "): OffsetY = " + newOffsetY); // 오프셋 로그
+
+            for (int[] coord : c) { // Objects.requireNonNull 제거 (null 체크 위에서 함)
+                if (coord == null || coord.length < 3) continue; // 좌표 유효성 체크
+
+                int baseX = coord[0];
+                int baseY = coord[1];
+                int baseZ = coord[2];
+
+                int finalX = baseX;
+                int finalY = baseY + newOffsetY; // Y 좌표에 오프셋 적용
+                int finalZ = baseZ;
+
+                // 중요: 로그에 최종 좌표 출력
+                System.out.println("[TetrisPiece] -> Setting block at (" + finalX + ", " + finalY + ", " + finalZ + ") to " + blockType);
+
+                Block block = world.getBlockAt(finalX, finalY, finalZ);
                 block.setType(blockType);
             }
             newOffsetY -= 4;
@@ -1421,7 +1441,7 @@ public class TetrisPiece {
     public void rotate() {
         if (isLocked) return;
 
-        player.sendMessage("number: " + playerNumber);
+//        player.sendMessage("number: " + playerNumber);
         clearPiece(offsetY);
         clearPiece(ghostOffsetY);
 
@@ -1490,7 +1510,6 @@ public class TetrisPiece {
     }
 
     public void hardDrop() {
-        player.sendMessage("hardDrop()");
         if (isLocked) return;
 
         clearPiece(offsetY);
@@ -1562,7 +1581,7 @@ public class TetrisPiece {
 
 //        현재 블록을 보드에 기록
         int[][] coordinates = getCurrentBlockCoordinates(pieceType, rotation)[playerNumber];
-        player.sendMessage("locking block...");
+//        player.sendMessage("locking block...");
         for (int[] coord: coordinates) {
             int x = coord[0] + offsetX;
             int y = coord[1] + offsetY;
@@ -1572,7 +1591,7 @@ public class TetrisPiece {
 
             board.addLockedBlock(x, y, z, PIECE_MATERIALS[pieceType]);
         }
-        player.sendMessage(PIECE_NAMES[pieceType] + " 블록이 고정되었습니다.");
+//        player.sendMessage(PIECE_NAMES[pieceType] + " 블록이 고정되었습니다.");
     }
 
     // getter 메서드들
