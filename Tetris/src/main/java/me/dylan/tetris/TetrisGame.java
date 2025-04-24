@@ -1,9 +1,6 @@
 package me.dylan.tetris;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -12,7 +9,6 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.scheduler.BukkitTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.util.*;
 
@@ -65,11 +61,9 @@ public class TetrisGame implements Listener {
 
 
     // 홀드 관련 변수 단순화
-    private final World world;
     public List<Player> onlineList;
     public List<Player> active;
     public List<Player> registList;
-    public int[] maxHeight;
     public int[] scoreList;
     public int[] levelList;
     public Player standardPlayer; // 실험용
@@ -95,8 +89,6 @@ public class TetrisGame implements Listener {
         this.upcomingPiece3 = new int[5];
         this.upcomingPiece4 = new int[5];
         this.upcomingPiece5 = new int[5];
-        this.maxHeight = new int[5];
-        this.world = standardPlayer.getWorld();
 
 //        standardPlayer.sendMessage("\ntest: finish game init()");
 //        standardPlayer.sendMessage("registered: " + registeredPlayerList);
@@ -133,6 +125,33 @@ public class TetrisGame implements Listener {
             }
         }
         startGame();
+    }
+
+    /**
+     * 다른 활성 플레이어 보드에 쓰레기 줄을 추가하는 로직
+     * @param attackingPlayerIndex 공격하는 플레이어의 인덱스 (0~4)
+     * @param linesToAdd 추가할 쓰레기 줄 수
+     */
+    private void sendGarbageLines(int attackingPlayerIndex, int linesToAdd) {
+        if (linesToAdd <= 0) return;
+
+        for (int i = 0; i < registList.size(); i++) {
+            // 자기 자신 또는 비활성 플레이어는 건너<0xEB><0x9A><0x8D>기
+            if (i == attackingPlayerIndex || registList.get(i) == null) {
+                continue;
+            }
+
+            // 대상 보드의 좌표 정보 가져오기
+            int targetX = boardClearCoord[i][0];
+            int targetY = boardClearCoord[i][1];
+            int targetZ = boardClearCoord[i][2];
+
+            // TetrisBoard의 메서드를 호출하여 쓰레기 줄 추가 요청
+            board.addGarbageLines(linesToAdd, targetX, targetY, targetZ);
+
+            // (선택사항) 쓰레기 줄이 추가되었음을 대상 플레이어에게 알림
+             registList.get(i).sendMessage("§7" + linesToAdd + "줄의 공격을 받았습니다!");
+        }
     }
 
     public void startGame() {
@@ -228,7 +247,7 @@ public class TetrisGame implements Listener {
                 int randomIdx = (int) (Math.random() * 8);
                 upcomingPiece2[i] = randomIdx;
             }
-            this.firstRun3 = false;
+            this.firstRun2 = false;
         }
 
         this.currentPiece2 = this.upcomingPiece2[0];
@@ -239,7 +258,12 @@ public class TetrisGame implements Listener {
 
         this.upcomingPiece2[4] = (int) (Math.random() * 8);
 
+//        standardPlayer.sendMessage("\ncurrentPiece: " + currentPiece2);
+//        standardPlayer.sendMessage("\nnextPiece: " + Arrays.toString(upcomingPiece2));
+
         this.piece2 = new TetrisPiece(this.currentPiece2, 1, this.registList.get(1), this.board);
+
+//        standardPlayer.sendMessage("\npiece: " + piece2);
 
         this.piece2.clearUpcomingBlocks();
         this.piece2.drawUpcomingBlocks(1, upcomingPiece2);
@@ -326,66 +350,26 @@ public class TetrisGame implements Listener {
                 return;
             }
 
-            if (!this.piece1.moveDown()) {
-                gameTask1.cancel();
-                int stackLines = board.checkLines(1);
+            if (piece1 == null || !piece1.moveDown()) { // piece1 null 체크 추가
+                if (gameTask1 != null) gameTask1.cancel(); // 타이머 취소 먼저
 
-                boolean match = true;
-                for (int i = -52; i <= -6; i++) {
-                    for (int j = -16; j <= 11; j++) {
-                        Block block = world.getBlockAt(j, i, -13);
-                        if (block.getType() != Material.AIR) {
-                            match = false;
-                        }
-                    }
-                    if (match) {
-                        maxHeight[0] = i + 1;
-                    }
-                }
+                if (piece1 != null) { // 블록이 성공적으로 lock 된 경우에만 라인 체크 및 공격
+                    int clearedLines = board.checkLines(1); // checkLines는 0부터 시작하는 인덱스가 아닌 보드 번호(1) 사용
+                    Player player1 = registList.get(0); // 플레이어 2 가져오기 (null 가능성 있음)
+                    if(player1 != null) player1.sendMessage("Player 1 cleared lines: " + clearedLines); // 디버깅
+                    standardPlayer.sendMessage("Player 1 cleared lines: " + clearedLines); // 디버깅
 
-                for (int i = 0; i < registList.size(); i++) {
-                    if (i == 0) {
-                        continue;
-                    }
-//                    쓰레기줄 추가
-                    if (registList.get(i) != null) {
-                        int start = 0;
-                        int limit = 0;
-                        switch (i) {
-                            case 1 :
-                                start = 31;
-                                limit = 58;
-                                break;
-
-                            case 2 :
-                                start = 78;
-                                limit = 105;
-                                break;
-
-                            case 3 :
-                                start = 8;
-                                limit = 35;
-                                break;
-
-                            case 4 :
-                                start = 54;
-                                limit = 81;
-                                break;
-                        }
-                        for (int j = 0; j < stackLines; j++) {
-                            for (int k = start; k <= limit; k++) {
-                                if (i <= 2) {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -13);
-                                    block.setType(Material.GRAY_WOOL);
-                                } else {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -17);
-                                    block.setType(Material.GRAY_WOOL);
-                                }
-                            }
-                        }
+                    // 클리어한 라인이 있으면 다른 플레이어에게 쓰레기 줄 보내기
+                    if (clearedLines > 0) {
+                        // 공격 로직: attackingPlayerIndex는 0 (플레이어 1)
+                        sendGarbageLines(0, clearedLines);
                     }
                 }
-                spawnNewPiece1();
+
+                // 새 블록 생성 (타이머가 취소된 후 실행)
+                if (isGameRunning) { // 게임이 여전히 실행 중일 때만 새 블록 생성
+                    spawnNewPiece1();
+                }
             }
         }, tickDelay, tickDelay);
     }
@@ -398,68 +382,34 @@ public class TetrisGame implements Listener {
                 return;
             }
 
-            if (!this.piece2.moveDown()) {
-                gameTask2.cancel();
-                int stackLines = board.checkLines(2);
+//            if (!this.piece2.moveDown()) {
+//                gameTask2.cancel();
+////                board.checkLines(2);
+//                standardPlayer.sendMessage("cleared lines: " + board.checkLines(2));
+//                spawnNewPiece2();
+//            }
+            if (piece2 == null || !piece2.moveDown()) { // piece1 null 체크 추가
+                if (gameTask2 != null) gameTask2.cancel(); // 타이머 취소 먼저
 
-                boolean match = true;
-                for (int i = -52; i <= -6; i++) {
-                    for (int j = 31; j <= 58; j++) {
-                        Block block = world.getBlockAt(j, i, -13);
-                        if (block.getType() != Material.AIR) {
-                            match = false;
-                        }
-                    }
-                    if (match) {
-                        maxHeight[1] = i + 1;
-                    }
-                }
+                if (piece2 != null) { // 블록이 성공적으로 lock 된 경우에만 라인 체크 및 공격
+                    int clearedLines = board.checkLines(2); // checkLines는 0부터 시작하는 인덱스가 아닌 보드 번호(1) 사용
+                    standardPlayer.sendMessage("Player 2 cleared lines: " + clearedLines); // 디버깅
+                    Player player2 = registList.get(1); // 플레이어 2 가져오기 (null 가능성 있음)
+                    if(player2 != null) player2.sendMessage("Player 2 cleared lines: " + clearedLines); // 디버깅
 
-                for (int i = 0; i < registList.size(); i++) {
-                    if (i == 1) {
-                        continue;
-                    }
-//                    쓰레기줄 추가
-                    if (registList.get(i) != null) {
-                        int start = 0;
-                        int limit = 0;
-                        switch (i) {
-                            case 0 :
-                                start = -16;
-                                limit = 11;
-                                break;
-
-                            case 2 :
-                                start = 78;
-                                limit = 105;
-                                break;
-
-                            case 3 :
-                                start = 8;
-                                limit = 35;
-                                break;
-
-                            case 4 :
-                                start = 54;
-                                limit = 81;
-                                break;
-                        }
-                        for (int j = 0; j < stackLines; j++) {
-                            for (int k = start; k <= limit; k++) {
-                                if (i <= 2) {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -13);
-                                    block.setType(Material.GRAY_WOOL);
-                                } else {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -17);
-                                    block.setType(Material.GRAY_WOOL);
-                                }
-                            }
-                        }
+                    // 클리어한 라인이 있으면 다른 플레이어에게 쓰레기 줄 보내기
+                    if (clearedLines > 0) {
+                        // 공격 로직: attackingPlayerIndex는 0 (플레이어 1)
+                        sendGarbageLines(1, clearedLines);
                     }
                 }
 
-                spawnNewPiece2();
+                // 새 블록 생성 (타이머가 취소된 후 실행)
+                if (isGameRunning) { // 게임이 여전히 실행 중일 때만 새 블록 생성
+                    spawnNewPiece2();
+                }
             }
+
         }, tickDelay, tickDelay);
     }
 
@@ -471,66 +421,33 @@ public class TetrisGame implements Listener {
                 return;
             }
 
-            if (!this.piece3.moveDown()) {
-                gameTask3.cancel();
-                int stackLines = board.checkLines(3);
+//            if (!this.piece3.moveDown()) {
+//                gameTask3.cancel();
+////                board.checkLines(3);
+//                standardPlayer.sendMessage("cleared lines: " + board.checkLines(3));
+//                spawnNewPiece3();
+//            }
 
-                boolean match = true;
-                for (int i = -52; i <= -6; i++) {
-                    for (int j = 78; j <= 105; j++) {
-                        Block block = world.getBlockAt(j, i, -13);
-                        if (block.getType() != Material.AIR) {
-                            match = false;
-                        }
-                    }
-                    if (match) {
-                        maxHeight[2] = i + 1;
-                    }
-                }
+            if (piece3 == null || !piece3.moveDown()) { // piece1 null 체크 추가
+                if (gameTask3 != null) gameTask3.cancel(); // 타이머 취소 먼저
 
-                for (int i = 0; i < registList.size(); i++) {
-                    if (i == 2) {
-                        continue;
-                    }
-//                    쓰레기줄 추가
-                    if (registList.get(i) != null) {
-                        int start = 0;
-                        int limit = 0;
-                        switch (i) {
-                            case 0 :
-                                start = -16;
-                                limit = 11;
-                                break;
+                if (piece3 != null) { // 블록이 성공적으로 lock 된 경우에만 라인 체크 및 공격
+                    int clearedLines = board.checkLines(3); // checkLines는 0부터 시작하는 인덱스가 아닌 보드 번호(1) 사용
+                    standardPlayer.sendMessage("Player 3 cleared lines: " + clearedLines); // 디버깅
+                    Player player3 = registList.get(2); // 플레이어 2 가져오기 (null 가능성 있음)
+                    if(player3 != null) player3.sendMessage("Player 3 cleared lines: " + clearedLines); // 디버깅
 
-                            case 1 :
-                                start = 31;
-                                limit = 58;
-                                break;
-
-                            case 3 :
-                                start = 8;
-                                limit = 35;
-                                break;
-
-                            case 4 :
-                                start = 54;
-                                limit = 81;
-                                break;
-                        }
-                        for (int j = 0; j < stackLines; j++) {
-                            for (int k = start; k <= limit; k++) {
-                                if (i <= 2) {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -13);
-                                    block.setType(Material.GRAY_WOOL);
-                                } else {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -17);
-                                    block.setType(Material.GRAY_WOOL);
-                                }
-                            }
-                        }
+                    // 클리어한 라인이 있으면 다른 플레이어에게 쓰레기 줄 보내기
+                    if (clearedLines > 0) {
+                        // 공격 로직: attackingPlayerIndex는 0 (플레이어 1)
+                        sendGarbageLines(2, clearedLines);
                     }
                 }
-                spawnNewPiece3();
+
+                // 새 블록 생성 (타이머가 취소된 후 실행)
+                if (isGameRunning) { // 게임이 여전히 실행 중일 때만 새 블록 생성
+                    spawnNewPiece3();
+                }
             }
 
         }, tickDelay, tickDelay);
@@ -544,68 +461,35 @@ public class TetrisGame implements Listener {
                 return;
             }
 
-            if (!this.piece4.moveDown()) {
-                gameTask4.cancel();
-                int stackLines = board.checkLines(4);
+//            if (!this.piece4.moveDown()) {
+//                gameTask4.cancel();
+////                board.checkLines(4);
+//                standardPlayer.sendMessage("cleared lines: " + board.checkLines(4));
+//                spawnNewPiece4();
+//            }
 
-                boolean match = true;
-                for (int i = -52; i <= -6; i++) {
-                    for (int j = 8; j <= 35; j++) {
-                        Block block = world.getBlockAt(j, i, -13);
-                        if (block.getType() != Material.AIR) {
-                            match = false;
-                        }
-                    }
-                    if (match) {
-                        maxHeight[3] = i + 1;
-                    }
-                }
+            if (piece4 == null || !piece4.moveDown()) { // piece1 null 체크 추가
+                if (gameTask4 != null) gameTask4.cancel(); // 타이머 취소 먼저
 
-                for (int i = 0; i < registList.size(); i++) {
-                    if (i == 3) {
-                        continue;
-                    }
-//                    쓰레기줄 추가
-                    if (registList.get(i) != null) {
-                        int start = 0;
-                        int limit = 0;
-                        switch (i) {
-                            case 0 :
-                                start = -16;
-                                limit = 11;
-                                break;
+                if (piece4 != null) { // 블록이 성공적으로 lock 된 경우에만 라인 체크 및 공격
+                    int clearedLines = board.checkLines(4); // checkLines는 0부터 시작하는 인덱스가 아닌 보드 번호(1) 사용
+                    standardPlayer.sendMessage("Player 4 cleared lines: " + clearedLines); // 디버깅
+                    Player player4 = registList.get(3); // 플레이어 2 가져오기 (null 가능성 있음)
+                    if(player4 != null) player4.sendMessage("Player 4 cleared lines: " + clearedLines); // 디버깅
 
-                            case 1 :
-                                start = 31;
-                                limit = 58;
-                                break;
-
-                            case 2 :
-                                start = 78;
-                                limit = 105;
-                                break;
-
-                            case 4 :
-                                start = 54;
-                                limit = 81;
-                                break;
-                        }
-
-                        for (int j = 0; j < stackLines; j++) {
-                            for (int k = start; k <= limit; k++) {
-                                if (i <= 2) {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -13);
-                                    block.setType(Material.GRAY_WOOL);
-                                } else {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -17);
-                                    block.setType(Material.GRAY_WOOL);
-                                }
-                            }
-                        }
+                    // 클리어한 라인이 있으면 다른 플레이어에게 쓰레기 줄 보내기
+                    if (clearedLines > 0) {
+                        // 공격 로직: attackingPlayerIndex는 0 (플레이어 1)
+                        sendGarbageLines(3, clearedLines);
                     }
                 }
-                spawnNewPiece4();
+
+                // 새 블록 생성 (타이머가 취소된 후 실행)
+                if (isGameRunning) { // 게임이 여전히 실행 중일 때만 새 블록 생성
+                    spawnNewPiece4();
+                }
             }
+
         }, tickDelay, tickDelay);
     }
 
@@ -617,68 +501,32 @@ public class TetrisGame implements Listener {
                 return;
             }
 
-            if (!this.piece5.moveDown()) {
-                gameTask5.cancel();
-                int stackLines = board.checkLines(5);
+//            if (!this.piece5.moveDown()) {
+//                gameTask5.cancel();
+////                board.checkLines(5);
+//                standardPlayer.sendMessage("cleared lines: " + board.checkLines(5));
+//                spawnNewPiece5();
+//            }
+            if (piece5 == null || !piece5.moveDown()) { // piece1 null 체크 추가
+                if (gameTask5 != null) gameTask5.cancel(); // 타이머 취소 먼저
 
-                boolean match = true;
-                for (int i = -52; i <= -6; i++) {
-                    for (int j = 8; j <= 35; j++) {
-                        Block block = world.getBlockAt(j, i, -13);
-                        if (block.getType() != Material.AIR) {
-                            match = false;
-                        }
-                    }
-                    if (match) {
-                        maxHeight[4] = i + 1;
-                    }
-                }
+                if (piece5 != null) { // 블록이 성공적으로 lock 된 경우에만 라인 체크 및 공격
+                    int clearedLines = board.checkLines(5); // checkLines는 0부터 시작하는 인덱스가 아닌 보드 번호(1) 사용
+                    standardPlayer.sendMessage("Player 5 cleared lines: " + clearedLines); // 디버깅
+                    Player player5 = registList.get(4); // 플레이어 2 가져오기 (null 가능성 있음)
+                    if(player5 != null) player5.sendMessage("Player 5 cleared lines: " + clearedLines); // 디버깅
 
-                for (int i = 0; i < registList.size(); i++) {
-                    if (i == 4) {
-                        continue;
-                    }
-//                    쓰레기줄 추가
-                    if (registList.get(i) != null) {
-                        int start = 0;
-                        int limit = 0;
-                        switch (i) {
-                            case 0 :
-                                start = -16;
-                                limit = 11;
-                                break;
-
-                            case 1 :
-                                start = 31;
-                                limit = 58;
-                                break;
-
-                            case 2 :
-                                start = 78;
-                                limit = 105;
-                                break;
-
-                            case 3 :
-                                start = 8;
-                                limit = 35;
-                                break;
-                        }
-
-                        for (int j = 0; j < stackLines; j++) {
-                            for (int k = start; k <= limit; k++) {
-                                if (i <= 2) {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -13);
-                                    block.setType(Material.GRAY_WOOL);
-                                } else {
-                                    Block block = world.getBlockAt(k, maxHeight[i] + j, -17);
-                                    block.setType(Material.GRAY_WOOL);
-                                }
-                            }
-                        }
+                    // 클리어한 라인이 있으면 다른 플레이어에게 쓰레기 줄 보내기
+                    if (clearedLines > 0) {
+                        // 공격 로직: attackingPlayerIndex는 0 (플레이어 1)
+                        sendGarbageLines(4, clearedLines);
                     }
                 }
 
-                spawnNewPiece5();
+                // 새 블록 생성 (타이머가 취소된 후 실행)
+                if (isGameRunning) { // 게임이 여전히 실행 중일 때만 새 블록 생성
+                    spawnNewPiece5();
+                }
             }
         }, tickDelay, tickDelay);
     }
