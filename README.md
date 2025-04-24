@@ -1,4 +1,4 @@
-server: https://drive.google.com/file/d/1Blpw29_OIncs86TuNjOSMZWVZtMovWmY/view?usp=sharing
+server: https://drive.google.com/file/d/1qAQLOs1bzvlF61WCGwMZCzbOj5QXtAOk/view?usp=drive_link
 
 go to the right directory
 
