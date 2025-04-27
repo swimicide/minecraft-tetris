@@ -1282,6 +1282,7 @@ public class BlockList {
                         index += 1;
                     }
                 }
+                index = 0;
             }
         }
     }
