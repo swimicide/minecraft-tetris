@@ -65,58 +65,59 @@ public class TetrisGame implements Listener {
                 int z = boardClearCoord[i][2];
                 board.clearBoards(x, y, z);
 
-                switch (i) {
-                    case 0 :
-                        int[] mainBoardSize1 = {-16, 11, -52};
-                        int[] upcomingBoardSize1 = {-21, -17, -38, -59, -11};
-                        int[] holdingBoardSize1 = {-35, -32, -22, -17};
-                        piece1 = new TetrisPiece(i, player, board, plugin, this,
-                                blockList.BLOCK_PLAYER_1, blockList.UPCOMING_BLOCKS_1, blockList.HOLDING_BLOCKS_1,
-//                                boardStart, boardEnd, boardHeight);
-//                                -16, 11, -52);
-                                mainBoardSize1, upcomingBoardSize1, holdingBoardSize1);
-                        controller1 = new TetrisController(this.plugin, piece1, i, this.registList.get(i));
-                        break;
+                if (i == 0) {
+                    int[] mainBoardSize = {-16, 11, -52};
+                    int[] upcomingBoardSize = {-21, -17, -38, -59, -11};
+                    int[] holdingBoardSize = {-35, -32, -22, -17};
 
-                    case 1 :
-                        int[] mainBoardSize2 = {31, 58, -52};
-                        int[] upcomingBoardSize2 = {26, 30, -38, -59, -11};
-                        int[] holdingBoardSize2 = {-35, -32, 25, 30};
-                        piece2 = new TetrisPiece(i, player, board, plugin, this,
-                                blockList.BLOCK_PLAYER_2, blockList.UPCOMING_BLOCKS_2, blockList.HOLDING_BLOCKS_2,
-                                mainBoardSize2, upcomingBoardSize2, holdingBoardSize2);
-                        controller2 = new TetrisController(this.plugin, piece2, i, this.registList.get(i));
-                        break;
+                    piece1 = new TetrisPiece(i, player, board, plugin, this,
+                            blockList.BLOCK_PLAYER_1, blockList.UPCOMING_BLOCKS_1, blockList.HOLDING_BLOCKS_1,
+                            mainBoardSize, upcomingBoardSize, holdingBoardSize);
+                    controller1 = new TetrisController(this.plugin, piece1, i, this.registList.get(i));
+                }
 
-                    case 2 :
-                        int[] mainBoardSize3 = {78, 105, -52};
-                        int[] upcomingBoardSize3 = {73, 77, -38, -59, -11};
-                        int[] holdingBoardSize3 = {-35, -32, 72, 77};
-                        piece3 = new TetrisPiece(i, player, board, plugin, this,
-                                blockList.BLOCK_PLAYER_3, blockList.UPCOMING_BLOCKS_3, blockList.HOLDING_BLOCKS_3,
-                                mainBoardSize3, upcomingBoardSize3, holdingBoardSize3);
-                        controller3 = new TetrisController(this.plugin, piece3, i, this.registList.get(i));
-                        break;
+                if (i == 1) {
+                    int[] mainBoardSize = {31, 58, -52};
+                    int[] upcomingBoardSize = {26, 30, -38, -59, -11};
+                    int[] holdingBoardSize = {-35, -32, 25, 30};
 
-                    case 3 :
-                        int[] mainBoardSize4 = {8, 35, 13};
-                        int[] upcomingBoardSize4 = {3, 7, 28, 4, -15};
-                        int[] holdingBoardSize4 = {32, 35, 2, 7};
-                        piece4 = new TetrisPiece(i, player, board, plugin, this,
-                                blockList.BLOCK_PLAYER_4, blockList.UPCOMING_BLOCKS_4, blockList.HOLDING_BLOCKS_4,
-                                mainBoardSize4, upcomingBoardSize4, holdingBoardSize4);
-                        controller4 = new TetrisController(this.plugin, piece4, i, this.registList.get(i));
-                        break;
+                    piece2 = new TetrisPiece(i, player, board, plugin, this,
+                            blockList.BLOCK_PLAYER_2, blockList.UPCOMING_BLOCKS_2, blockList.HOLDING_BLOCKS_2,
+                            mainBoardSize, upcomingBoardSize, holdingBoardSize);
+                    controller2 = new TetrisController(this.plugin, piece2, i, this.registList.get(i));
+                }
 
-                    case 4 :
-                        int[] mainBoardSize5 = {54, 84, 13};
-                        int[] upcomingBoardSize5 = {49, 53, 28, 4, -15};
-                        int[] holdingBoardSize5 = {32, 35, 48, 53};
-                        piece5 = new TetrisPiece(i, player, board, plugin, this,
-                                blockList.BLOCK_PLAYER_5, blockList.UPCOMING_BLOCKS_5, blockList.HOLDING_BLOCKS_5,
-                                mainBoardSize5, upcomingBoardSize5, holdingBoardSize5);
-                        controller5 = new TetrisController(this.plugin, piece5, i, this.registList.get(i));
-                        break;
+                if (i == 2) {
+                    int[] mainBoardSize = {78, 105, -52};
+                    int[] upcomingBoardSize = {73, 77, -38, -59, -11};
+                    int[] holdingBoardSize = {-35, -32, 72, 77};
+
+                    piece3 = new TetrisPiece(i, player, board, plugin, this,
+                            blockList.BLOCK_PLAYER_3, blockList.UPCOMING_BLOCKS_3, blockList.HOLDING_BLOCKS_3,
+                            mainBoardSize, upcomingBoardSize, holdingBoardSize);
+                    controller3 = new TetrisController(this.plugin, piece3, i, this.registList.get(i));
+                }
+
+                if (i == 3) {
+                    int[] mainBoardSize = {8, 35, 13};
+                    int[] upcomingBoardSize = {3, 7, 28, 4, -15};
+                    int[] holdingBoardSize = {32, 35, 2, 7};
+
+                    piece4 = new TetrisPiece(i, player, board, plugin, this,
+                            blockList.BLOCK_PLAYER_4, blockList.UPCOMING_BLOCKS_4, blockList.HOLDING_BLOCKS_4,
+                            mainBoardSize, upcomingBoardSize, holdingBoardSize);
+                    controller4 = new TetrisController(this.plugin, piece4, i, this.registList.get(i));
+                }
+
+                if (i == 4) {
+                    int[] mainBoardSize = {54, 84, 13};
+                    int[] upcomingBoardSize = {49, 53, 28, 4, -15};
+                    int[] holdingBoardSize = {32, 35, 48, 53};
+
+                    piece5 = new TetrisPiece(i, player, board, plugin, this,
+                            blockList.BLOCK_PLAYER_5, blockList.UPCOMING_BLOCKS_5, blockList.HOLDING_BLOCKS_5,
+                            mainBoardSize, upcomingBoardSize, holdingBoardSize);
+                    controller5 = new TetrisController(this.plugin, piece5, i, this.registList.get(i));
                 }
             }
         }
